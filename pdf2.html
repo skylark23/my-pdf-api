@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF API Tester - WebView Compatible</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 900px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+            text-align: center;
+        }
+
+        p {
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.6;
+            text-align: center;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        button.secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .status {
+            margin-bottom: 20px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.loading {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid #0c5460;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .hint {
+            font-size: 12px;
+            color: #999;
+            margin-top: 8px;
+        }
+
+        #pdfViewer {
+            width: 100%;
+            height: 600px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            display: none;
+            background: #f5f5f5;
+        }
+
+        #pdfViewer.active {
+            display: block;
+        }
+
+        .viewer-controls {
+            display: none;
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        .viewer-controls.active {
+            display: block;
+        }
+
+        .viewer-controls button {
+            background: #6c757d;
+            padding: 10px 20px;
+            font-size: 12px;
+        }
+
+        #base64Output {
+            display: none;
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        #base64Output.active {
+            display: block;
+        }
+
+        #base64Output textarea {
+            width: 100%;
+            height: 150px;
+            font-family: monospace;
+            font-size: 11px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📄 PDF API Tester</h1>
+        <p>WebView-compatible PDF viewer with multiple display methods</p>
+
+        <div class="input-group">
+            <label for="apiUrl">API Endpoint URL</label>
+            <input 
+                type="text" 
+                id="apiUrl" 
+                placeholder="https://my-pdf-api-nine.vercel.app/api/pdf"
+                value="https://my-pdf-api-nine.vercel.app/api/pdf"
+            >
+            <div class="hint">Replace with your actual Vercel API URL</div>
+        </div>
+
+        <div class="button-group">
+            <button onclick="displayInline()">📱 Display Inline (WebView)</button>
+            <button onclick="displayBase64()" class="secondary">🔤 Show Base64</button>
+        </div>
+
+        <div id="status" class="status"></div>
+
+        <iframe id="pdfViewer"></iframe>
+        
+        <div id="viewerControls" class="viewer-controls">
+            <button onclick="closePDF()">Close PDF</button>
+        </div>
+
+        <div id="base64Output">
+            <h3 style="margin-bottom: 10px; color: #333;">Base64 Data URL:</h3>
+            <textarea id="base64Text" readonly></textarea>
+            <div class="hint" style="margin-top: 10px;">You can use this data URL in your iOS app's webview</div>
+        </div>
+    </div>
+
+    <script>
+        let currentBlobUrl = null;
+
+        async function fetchPDF() {
+            const apiUrl = document.getElementById('apiUrl').value.trim();
+            const statusDiv = document.getElementById('status');
+
+            // Validate URL
+            if (!apiUrl) {
+                showStatus('error', 'Please enter an API URL');
+                throw new Error('No API URL provided');
+            }
+
+            try {
+                showStatus('loading', '<span class="spinner"></span>Fetching PDF from API...');
+
+                // Fetch the PDF from the API
+                const response = await fetch(apiUrl);
+
+                // Check if request was successful
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                // Check if response is actually a PDF
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/pdf')) {
+                    throw new Error(`Expected PDF but got: ${contentType}`);
+                }
+
+                // Get the PDF as a blob
+                const blob = await response.blob();
+                
+                showStatus('success', '✓ PDF fetched successfully!');
+                
+                return blob;
+
+            } catch (error) {
+                console.error('Error fetching PDF:', error);
+                showStatus('error', `✗ Error: ${error.message}`);
+                throw error;
+            }
+        }
+
+        async function displayInline() {
+            try {
+                const blob = await fetchPDF();
+                
+                // Clean up previous blob URL
+                if (currentBlobUrl) {
+                    window.URL.revokeObjectURL(currentBlobUrl);
+                }
+
+                // Create blob URL
+                currentBlobUrl = window.URL.createObjectURL(blob);
+
+                // Display in iframe
+                const viewer = document.getElementById('pdfViewer');
+                viewer.src = currentBlobUrl;
+                viewer.classList.add('active');
+                
+                document.getElementById('viewerControls').classList.add('active');
+                document.getElementById('base64Output').classList.remove('active');
+
+                showStatus('success', '✓ PDF displayed inline!');
+
+            } catch (error) {
+                // Error already handled in fetchPDF
+            }
+        }
+
+        async function displayBase64() {
+            try {
+                const blob = await fetchPDF();
+                
+                // Convert blob to base64
+                const reader = new FileReader();
+                reader.onloadend = function() {
+                    const base64data = reader.result;
+                    
+                    // Display base64
+                    document.getElementById('base64Text').value = base64data;
+                    document.getElementById('base64Output').classList.add('active');
+                    document.getElementById('pdfViewer').classList.remove('active');
+                    document.getElementById('viewerControls').classList.remove('active');
+                    
+                    showStatus('success', '✓ Base64 data ready! You can copy and use in your app.');
+                };
+                reader.readAsDataURL(blob);
+
+            } catch (error) {
+                // Error already handled in fetchPDF
+            }
+        }
+
+        function closePDF() {
+            const viewer = document.getElementById('pdfViewer');
+            viewer.classList.remove('active');
+            viewer.src = '';
+            
+            document.getElementById('viewerControls').classList.remove('active');
+            
+            if (currentBlobUrl) {
+                window.URL.revokeObjectURL(currentBlobUrl);
+                currentBlobUrl = null;
+            }
+        }
+
+        function showStatus(type, message) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = `status ${type}`;
+            statusDiv.innerHTML = message;
+            statusDiv.style.display = 'block';
+
+            // Auto-hide success messages after 3 seconds
+            if (type === 'success') {
+                setTimeout(() => {
+                    statusDiv.style.display = 'none';
+                }, 3000);
+            }
+        }
+
+        // Allow Enter key to submit
+        document.getElementById('apiUrl').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                displayInline();
+            }
+        });
+
+        // Clean up on page unload
+        window.addEventListener('beforeunload', function() {
+            if (currentBlobUrl) {
+                window.URL.revokeObjectURL(currentBlobUrl);
+            }
+        });
+    </script>
+</body>
+</html>
