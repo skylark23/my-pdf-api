@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Viewer - Canvas Rendering</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 900px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+            text-align: center;
+        }
+
+        p {
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.6;
+            text-align: center;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status {
+            margin-bottom: 20px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.loading {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid #0c5460;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .hint {
+            font-size: 12px;
+            color: #999;
+            margin-top: 8px;
+        }
+
+        #pdfContainer {
+            display: none;
+            margin-top: 20px;
+        }
+
+        #pdfContainer.active {
+            display: block;
+        }
+
+        .pdf-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .pdf-controls button {
+            padding: 10px 20px;
+            font-size: 14px;
+            width: auto;
+            margin: 0;
+            background: #6c757d;
+        }
+
+        .pdf-controls button:hover {
+            background: #5a6268;
+        }
+
+        .pdf-controls span {
+            color: #333;
+            font-weight: 500;
+        }
+
+        #pdfPages {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 10px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .pdf-page {
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        .pdf-page canvas {
+            display: block;
+            max-width: 100%;
+            height: auto;
+            margin: 0 auto;
+        }
+
+        .page-number {
+            text-align: center;
+            color: #666;
+            font-size: 12px;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📄 PDF Canvas Viewer</h1>
+        <p>Renders PDF as images - works in any webview!</p>
+
+        <div class="input-group">
+            <label for="apiUrl">API Endpoint URL</label>
+            <input 
+                type="text" 
+                id="apiUrl" 
+                placeholder="https://my-pdf-api-nine.vercel.app/api/pdf"
+                value="https://my-pdf-api-nine.vercel.app/api/pdf"
+            >
+            <div class="hint">Works great for PDFs under 1MB</div>
+        </div>
+
+        <button onclick="loadAndRenderPDF()">Load PDF</button>
+
+        <div id="status" class="status"></div>
+
+        <div id="pdfContainer">
+            <div class="pdf-controls">
+                <button onclick="changeScale(-0.2)">Zoom Out</button>
+                <span id="pageInfo">Page 1 of 1</span>
+                <button onclick="changeScale(0.2)">Zoom In</button>
+            </div>
+            <div id="pdfPages"></div>
+        </div>
+    </div>
+
+    <!-- PDF.js Library from CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    
+    <script>
+        // Configure PDF.js worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        let pdfDoc = null;
+        let currentScale = 1.5;
+
+        async function loadAndRenderPDF() {
+            const apiUrl = document.getElementById('apiUrl').value.trim();
+
+            if (!apiUrl) {
+                showStatus('error', 'Please enter an API URL');
+                return;
+            }
+
+            try {
+                showStatus('loading', '<span class="spinner"></span>Fetching and rendering PDF...');
+
+                // Fetch the PDF
+                const response = await fetch(apiUrl);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                // Get as array buffer (required by PDF.js)
+                const arrayBuffer = await response.arrayBuffer();
+
+                // Load PDF document
+                const loadingTask = pdfjsLib.getDocument({data: arrayBuffer});
+                pdfDoc = await loadingTask.promise;
+
+                showStatus('success', `✓ PDF loaded! Rendering ${pdfDoc.numPages} page(s)...`);
+
+                // Render all pages
+                await renderAllPages();
+
+                // Show container
+                document.getElementById('pdfContainer').classList.add('active');
+                
+                showStatus('success', '✓ PDF rendered successfully!');
+
+            } catch (error) {
+                console.error('Error loading PDF:', error);
+                showStatus('error', `✗ Error: ${error.message}`);
+            }
+        }
+
+        async function renderAllPages() {
+            const container = document.getElementById('pdfPages');
+            container.innerHTML = ''; // Clear previous content
+
+            // Render each page
+            for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+                const page = await pdfDoc.getPage(pageNum);
+                
+                // Create page container
+                const pageDiv = document.createElement('div');
+                pageDiv.className = 'pdf-page';
+                
+                // Create canvas
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                
+                // Calculate dimensions
+                const viewport = page.getViewport({scale: currentScale});
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+                
+                // Render page
+                await page.render({
+                    canvasContext: context,
+                    viewport: viewport
+                }).promise;
+                
+                // Add to page
+                pageDiv.appendChild(canvas);
+                
+                // Add page number
+                const pageLabel = document.createElement('div');
+                pageLabel.className = 'page-number';
+                pageLabel.textContent = `Page ${pageNum} of ${pdfDoc.numPages}`;
+                pageDiv.appendChild(pageLabel);
+                
+                container.appendChild(pageDiv);
+            }
+
+            updatePageInfo();
+        }
+
+        async function changeScale(delta) {
+            currentScale = Math.max(0.5, Math.min(3, currentScale + delta));
+            
+            if (pdfDoc) {
+                showStatus('loading', '<span class="spinner"></span>Re-rendering at new scale...');
+                await renderAllPages();
+                showStatus('success', '✓ Zoom updated!');
+            }
+        }
+
+        function updatePageInfo() {
+            if (pdfDoc) {
+                document.getElementById('pageInfo').textContent = 
+                    `${pdfDoc.numPages} page(s) | Scale: ${Math.round(currentScale * 100)}%`;
+            }
+        }
+
+        function showStatus(type, message) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = `status ${type}`;
+            statusDiv.innerHTML = message;
+            statusDiv.style.display = 'block';
+
+            if (type === 'success') {
+                setTimeout(() => {
+                    statusDiv.style.display = 'none';
+                }, 3000);
+            }
+        }
+
+        // Allow Enter key to submit
+        document.getElementById('apiUrl').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                loadAndRenderPDF();
+            }
+        });
+    </script>
+</body>
+</html>
