@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Viewer - Authenticated Download</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 900px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+            text-align: center;
+        }
+
+        p {
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.6;
+            text-align: center;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 18px 20px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status {
+            margin-bottom: 20px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.loading {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid #0c5460;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .hint {
+            font-size: 12px;
+            color: #999;
+            margin-top: 8px;
+        }
+
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            font-size: 13px;
+            color: #333;
+        }
+
+        .info-box strong {
+            color: #1976D2;
+        }
+
+        .security-badge {
+            background: #FF9500;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-left: 8px;
+        }
+
+        .feature-list {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .feature-list h3 {
+            color: #333;
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .feature-list ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-list li {
+            padding: 8px 0;
+            color: #555;
+            font-size: 14px;
+        }
+
+        .feature-list li:before {
+            content: "✓ ";
+            color: #34C759;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #e0e0e0;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .progress-bar.active {
+            display: block;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s;
+            animation: progress 2s ease-in-out;
+        }
+
+        @keyframes progress {
+            0% { width: 0%; }
+            50% { width: 70%; }
+            100% { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 PDF Secure Downloader <span class="security-badge">AUTH ENABLED</span></h1>
+        <p>Fetches authenticated PDFs and passes to native app!</p>
+
+        <div class="info-box">
+            <strong>🔒 How it works (Secure Flow):</strong><br>
+            1. You click "Open PDF"<br>
+            2. JavaScript fetches PDF using your webview's authentication/cookies<br>
+            3. PDF data is passed to Swift as base64<br>
+            4. Native app saves and opens share sheet
+        </div>
+
+        <div class="feature-list">
+            <h3>Why This Approach:</h3>
+            <ul>
+                <li>Webview keeps existing authentication/sessions</li>
+                <li>No need to share credentials with native app</li>
+                <li>Secure URLs remain protected</li>
+                <li>Native share sheet for best UX</li>
+            </ul>
+        </div>
+
+        <div class="input-group">
+            <label for="apiUrl">Secure PDF API Endpoint</label>
+            <input 
+                type="text" 
+                id="apiUrl" 
+                placeholder="https://my-pdf-api-nine.vercel.app/api/pdf"
+                value="https://my-pdf-api-nine.vercel.app/api/pdf"
+            >
+            <div class="hint">🔐 Uses webview's authentication automatically</div>
+        </div>
+
+        <div class="button-group">
+            <button id="openBtn" onclick="openPDF()">📥 Open PDF</button>
+        </div>
+
+        <div id="status" class="status"></div>
+        <div id="progressBar" class="progress-bar">
+            <div class="progress-fill"></div>
+        </div>
+    </div>
+
+    <script>
+        // Detect if running in iOS webview
+        function isIOSWebView() {
+            return window.webkit && 
+                   window.webkit.messageHandlers && 
+                   window.webkit.messageHandlers.downloadPDFData;
+        }
+
+        async function openPDF() {
+            const apiUrl = document.getElementById('apiUrl').value.trim();
+            const openBtn = document.getElementById('openBtn');
+
+            if (!apiUrl) {
+                showStatus('error', '✗ Please enter an API URL');
+                console.error('No API URL provided');
+                return;
+            }
+
+            // Validate URL format
+            try {
+                new URL(apiUrl);
+            } catch (e) {
+                showStatus('error', '✗ Invalid URL format');
+                console.error('Invalid URL:', apiUrl);
+                return;
+            }
+
+            if (!isIOSWebView()) {
+                showStatus('error', '✗ This page must be opened in the iOS app');
+                console.error('Not in iOS WebView');
+                return;
+            }
+
+            // Disable button during fetch
+            openBtn.disabled = true;
+            showStatus('loading', '<span class="spinner"></span>Fetching PDF from secure API...');
+            document.getElementById('progressBar').classList.add('active');
+
+            console.log('Starting secure PDF fetch from:', apiUrl);
+
+            try {
+                // Fetch the PDF using webview's authentication
+                const response = await fetch(apiUrl, {
+                    credentials: 'include', // Include cookies/auth
+                    headers: {
+                        'Accept': 'application/pdf'
+                    }
+                });
+
+                console.log('Response status:', response.status);
+                console.log('Response headers:', [...response.headers.entries()]);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const contentType = response.headers.get('content-type');
+                console.log('Content-Type:', contentType);
+
+                if (!contentType || !contentType.includes('application/pdf')) {
+                    throw new Error(`Expected PDF but got: ${contentType}`);
+                }
+
+                showStatus('loading', '<span class="spinner"></span>Converting PDF to base64...');
+
+                // Get PDF as blob
+                const blob = await response.blob();
+                console.log('PDF blob size:', blob.size, 'bytes');
+
+                // Convert to base64
+                const base64Data = await blobToBase64(blob);
+                console.log('Base64 conversion complete, length:', base64Data.length);
+
+                showStatus('loading', '<span class="spinner"></span>Sending to native app...');
+
+                // Extract filename from headers or use default
+                const contentDisposition = response.headers.get('content-disposition');
+                let filename = 'document.pdf';
+                
+                if (contentDisposition) {
+                    const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                    if (filenameMatch && filenameMatch[1]) {
+                        filename = filenameMatch[1].replace(/['"]/g, '');
+                    }
+                }
+                
+                console.log('Filename:', filename);
+
+                // Send to Swift
+                window.webkit.messageHandlers.downloadPDFData.postMessage({
+                    data: base64Data,
+                    filename: filename
+                });
+
+                console.log('PDF data sent to Swift successfully');
+                showStatus('success', '✓ PDF sent to native app! Share sheet opening...');
+                document.getElementById('progressBar').classList.remove('active');
+
+            } catch (error) {
+                console.error('Error fetching PDF:', error);
+                showStatus('error', `✗ Error: ${error.message}`);
+                document.getElementById('progressBar').classList.remove('active');
+            } finally {
+                openBtn.disabled = false;
+            }
+        }
+
+        // Convert blob to base64
+        function blobToBase64(blob) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    // Return the full data URL (includes "data:application/pdf;base64," prefix)
+                    resolve(reader.result);
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        }
+
+        function showStatus(type, message) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = `status ${type}`;
+            statusDiv.innerHTML = message;
+            statusDiv.style.display = 'block';
+
+            if (type === 'success') {
+                setTimeout(() => {
+                    statusDiv.style.display = 'none';
+                }, 3000);
+            }
+        }
+
+        // Allow Enter key to trigger download
+        document.getElementById('apiUrl').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                openPDF();
+            }
+        });
+
+        // Log environment info on page load
+        console.log('=== PDF Secure Downloader ===');
+        console.log('Page loaded successfully');
+        console.log('User Agent:', navigator.userAgent);
+        console.log('iOS WebView detected:', isIOSWebView());
+        console.log('Credentials supported:', 'credentials' in Request.prototype);
+        console.log('============================');
+
+        // Show detection status
+        window.addEventListener('load', function() {
+            if (isIOSWebView()) {
+                console.log('✓ Native iOS handlers detected - ready for authenticated downloads');
+            } else {
+                console.log('✗ Not running in iOS WebView');
+                showStatus('error', '⚠️ Please open this page in the iOS app');
+            }
+        });
+    </script>
+</body>
+</html>
