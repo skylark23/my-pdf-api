@@ -226,7 +226,7 @@
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-
+                console.log('response is good');
                 // Check if response is actually a PDF
                 const contentType = response.headers.get('content-type');
                 if (!contentType || !contentType.includes('application/pdf')) {
@@ -247,15 +247,15 @@
                 });
 
                 showStatus('loading', '<span class="spinner"></span>Opening PDF...');
-
+                console.log('blob done');
                 // Use anchor click method with data URL
                 pdfLink.href = dataUrl;
                 pdfLink.download = 'document.pdf';  // Suggested filename
                 pdfLink.target = '_blank';
-                
+                console.log('blob pdfLink done');
                 // Trigger the click
                 pdfLink.click();
-
+                console.log('pdf click done');
                 // Show success message
                 showStatus('success', '✓ PDF opened successfully!');
 
