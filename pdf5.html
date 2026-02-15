@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Viewer - iOS Compatible</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 900px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+            text-align: center;
+        }
+
+        p {
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.6;
+            text-align: center;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status {
+            margin-bottom: 20px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.loading {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid #0c5460;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .hint {
+            font-size: 12px;
+            color: #999;
+            margin-top: 8px;
+        }
+
+        #pdfViewer {
+            width: 100%;
+            height: 600px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            display: none;
+            background: #525659;
+        }
+
+        #pdfViewer.active {
+            display: block;
+        }
+
+        #pdfEmbed {
+            width: 100%;
+            height: 600px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            display: none;
+        }
+
+        #pdfEmbed.active {
+            display: block;
+        }
+
+        #pdfObject {
+            width: 100%;
+            height: 600px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            display: none;
+        }
+
+        #pdfObject.active {
+            display: block;
+        }
+
+        .viewer-controls {
+            display: none;
+            margin-top: 10px;
+            text-align: center;
+            gap: 10px;
+        }
+
+        .viewer-controls.active {
+            display: flex;
+            justify-content: center;
+        }
+
+        .viewer-controls button {
+            background: #6c757d;
+            padding: 10px 20px;
+            font-size: 12px;
+            width: auto;
+        }
+
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            font-size: 13px;
+            color: #333;
+        }
+
+        .info-box strong {
+            color: #1976D2;
+        }
+
+        .ios-badge {
+            background: #34C759;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-left: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📄 PDF Data URL Viewer <span class="ios-badge">iOS Compatible</span></h1>
+        <p>Enhanced with native iOS download support!</p>
+
+        <div class="info-box">
+            <strong>💡 Three Methods:</strong><br>
+            • <strong>iframe</strong>: Most compatible with webviews<br>
+            • <strong>embed</strong>: Alternative HTML5 approach<br>
+            • <strong>object</strong>: Fallback method<br>
+            <strong>📱 iOS Download:</strong> Uses native share sheet for saving PDFs
+        </div>
+
+        <div class="input-group">
+            <label for="apiUrl">API Endpoint URL</label>
+            <input 
+                type="text" 
+                id="apiUrl" 
+                placeholder="https://my-pdf-api-nine.vercel.app/api/pdf"
+                value="https://my-pdf-api-nine.vercel.app/api/pdf"
+            >
+            <div class="hint">Best for PDFs under 1MB</div>
+        </div>
+
+        <div class="button-group">
+            <button onclick="displayWithIframe()">🖼️ iframe Method</button>
+            <button onclick="displayWithEmbed()">🔎 embed Method</button>
+            <button onclick="displayWithObject()">📄 object Method</button>
+        </div>
+
+        <div id="status" class="status"></div>
+
+        <iframe id="pdfViewer"></iframe>
+        <embed id="pdfEmbed" type="application/pdf">
+        <object id="pdfObject" type="application/pdf"></object>
+        
+        <div id="viewerControls" class="viewer-controls">
+            <button onclick="closeAllViewers()">Close PDF</button>
+            <button onclick="downloadPDF()">📥 Download PDF</button>
+        </div>
+    </div>
+
+    <script>
+        let currentDataUrl = null;
+        let currentBlob = null;
+
+        // Detect if running in iOS webview
+        function isIOSWebView() {
+            return window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.downloadPDF;
+        }
+
+        async function fetchPDFAsDataURL() {
+            const apiUrl = document.getElementById('apiUrl').value.trim();
+
+            if (!apiUrl) {
+                showStatus('error', 'Please enter an API URL');
+                throw new Error('No API URL provided');
+            }
+
+            try {
+                showStatus('loading', '<span class="spinner"></span>Fetching PDF from API...');
+
+                console.log('Fetching PDF from:', apiUrl);
+
+                // Fetch the PDF
+                const response = await fetch(apiUrl);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const contentType = response.headers.get('content-type');
+                console.log('Content-Type:', contentType);
+                
+                if (!contentType || !contentType.includes('application/pdf')) {
+                    throw new Error(`Expected PDF but got: ${contentType}`);
+                }
+
+                // Get as blob
+                currentBlob = await response.blob();
+                console.log('PDF blob size:', currentBlob.size, 'bytes');
+
+                // Convert blob to base64 data URL
+                const dataUrl = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(currentBlob);
+                });
+
+                currentDataUrl = dataUrl;
+                console.log('Data URL created, length:', dataUrl.length);
+                showStatus('success', '✓ PDF converted to data URL!');
+                
+                return dataUrl;
+
+            } catch (error) {
+                console.error('Error fetching PDF:', error);
+                showStatus('error', `✗ Error: ${error.message}`);
+                throw error;
+            }
+        }
+
+        async function displayWithIframe() {
+            try {
+                const dataUrl = await fetchPDFAsDataURL();
+                
+                closeAllViewers();
+
+                const iframe = document.getElementById('pdfViewer');
+                iframe.src = dataUrl;
+                iframe.classList.add('active');
+                
+                document.getElementById('viewerControls').classList.add('active');
+                
+                showStatus('success', '✓ PDF displayed in iframe!');
+                console.log('PDF displayed in iframe');
+
+            } catch (error) {
+                console.error('Display error:', error);
+            }
+        }
+
+        async function displayWithEmbed() {
+            try {
+                const dataUrl = await fetchPDFAsDataURL();
+                
+                closeAllViewers();
+
+                const embed = document.getElementById('pdfEmbed');
+                embed.src = dataUrl;
+                embed.classList.add('active');
+                
+                document.getElementById('viewerControls').classList.add('active');
+                
+                showStatus('success', '✓ PDF displayed with embed tag!');
+                console.log('PDF displayed with embed');
+
+            } catch (error) {
+                console.error('Display error:', error);
+            }
+        }
+
+        async function displayWithObject() {
+            try {
+                const dataUrl = await fetchPDFAsDataURL();
+                
+                closeAllViewers();
+
+                const object = document.getElementById('pdfObject');
+                object.data = dataUrl;
+                object.classList.add('active');
+                
+                document.getElementById('viewerControls').classList.add('active');
+                
+                showStatus('success', '✓ PDF displayed with object tag!');
+                console.log('PDF displayed with object');
+
+            } catch (error) {
+                console.error('Display error:', error);
+            }
+        }
+
+        function closeAllViewers() {
+            document.getElementById('pdfViewer').classList.remove('active');
+            document.getElementById('pdfViewer').src = '';
+            
+            document.getElementById('pdfEmbed').classList.remove('active');
+            document.getElementById('pdfEmbed').src = '';
+            
+            document.getElementById('pdfObject').classList.remove('active');
+            document.getElementById('pdfObject').data = '';
+            
+            document.getElementById('viewerControls').classList.remove('active');
+        }
+
+        function downloadPDF() {
+            if (!currentDataUrl) {
+                showStatus('error', 'No PDF loaded');
+                console.error('No PDF loaded');
+                return;
+            }
+
+            console.log('Download button clicked');
+            console.log('Is iOS WebView:', isIOSWebView());
+
+            // Check if running in iOS webview with native handler
+            if (isIOSWebView()) {
+                console.log('Sending to native iOS handler');
+                try {
+                    // Send data URL to Swift
+                    window.webkit.messageHandlers.downloadPDF.postMessage(currentDataUrl);
+                    showStatus('success', '✓ Opening native share sheet...');
+                    console.log('Message sent to Swift successfully');
+                } catch (error) {
+                    console.error('Error sending to Swift:', error);
+                    showStatus('error', `✗ Error: ${error.message}`);
+                }
+            } else {
+                // Fallback for non-iOS (web browser)
+                console.log('Using fallback download method');
+                if (!currentBlob) {
+                    showStatus('error', 'No PDF loaded');
+                    return;
+                }
+
+                const url = window.URL.createObjectURL(currentBlob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'document.pdf';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                
+                showStatus('success', '✓ PDF download started!');
+                console.log('Fallback download triggered');
+            }
+        }
+
+        function showStatus(type, message) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = `status ${type}`;
+            statusDiv.innerHTML = message;
+            statusDiv.style.display = 'block';
+
+            if (type === 'success') {
+                setTimeout(() => {
+                    statusDiv.style.display = 'none';
+                }, 3000);
+            }
+        }
+
+        // Allow Enter key to submit
+        document.getElementById('apiUrl').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                displayWithIframe();
+            }
+        });
+
+        // Log environment info on load
+        console.log('Page loaded');
+        console.log('User Agent:', navigator.userAgent);
+        console.log('iOS WebView detected:', isIOSWebView());
+
+        // Expose for debugging
+        window.logDataUrl = function() {
+            if (currentDataUrl) {
+                console.log('Data URL length:', currentDataUrl.length);
+                console.log('First 100 chars:', currentDataUrl.substring(0, 100));
+                return currentDataUrl;
+            } else {
+                console.log('No PDF loaded yet');
+                return null;
+            }
+        };
+    </script>
+</body>
+</html>
