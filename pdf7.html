@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Viewer - Direct Navigation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        p {
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            text-align: left;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .hint {
+            font-size: 12px;
+            color: #999;
+            margin-top: 8px;
+        }
+
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            font-size: 13px;
+            color: #333;
+            text-align: left;
+        }
+
+        .info-box strong {
+            color: #1976D2;
+        }
+
+        .info-box code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        .success-box {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 5px;
+            font-size: 13px;
+            color: #155724;
+            text-align: left;
+        }
+
+        .success-box strong {
+            color: #0f5132;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📄 PDF Direct Navigation</h1>
+        <p>Navigate directly to API URL - works exactly like your old .aspx page!</p>
+
+        <div class="info-box">
+            <strong>✨ This approach:</strong><br>
+            • Navigates directly to API URL (no fetch/blob)<br>
+            • Works like <code>pdfviewer.aspx</code><br>
+            • Perfect for iOS webviews<br>
+            • Browser handles PDF natively
+        </div>
+
+        <div class="input-group">
+            <label for="apiUrl">API Endpoint URL</label>
+            <input 
+                type="text" 
+                id="apiUrl" 
+                placeholder="https://my-pdf-api-nine.vercel.app/api/pdf"
+                value="https://my-pdf-api-nine.vercel.app/api/pdf"
+            >
+            <div class="hint">Your API must return PDF with proper headers</div>
+        </div>
+
+        <div class="button-group">
+            <button onclick="openInNewTab()">
+                🔗 Open in New Tab
+            </button>
+            <button onclick="openInSameWindow()" class="secondary">
+                ↗️ Navigate Here
+            </button>
+        </div>
+
+        <div class="success-box">
+            <strong>💡 Pro Tip:</strong><br>
+            If you're embedding this in an iOS app, just call:<br>
+            <code>webview.load(url: "https://your-api.com/api/pdf")</code><br>
+            No HTML page needed!
+        </div>
+    </div>
+
+    <script>
+        function openInNewTab() {
+            const apiUrl = document.getElementById('apiUrl').value.trim();
+            
+            if (!apiUrl) {
+                alert('Please enter an API URL');
+                return;
+            }
+
+            // Simply open the URL in a new tab
+            // The browser/webview will handle the PDF natively
+            window.open(apiUrl, '_blank');
+        }
+
+        function openInSameWindow() {
+            const apiUrl = document.getElementById('apiUrl').value.trim();
+            
+            if (!apiUrl) {
+                alert('Please enter an API URL');
+                return;
+            }
+
+            // Navigate to the URL directly (replaces current page)
+            // This is EXACTLY like clicking a link to pdfviewer.aspx
+            window.location.href = apiUrl;
+        }
+
+        // Allow Enter key to open in new tab
+        document.getElementById('apiUrl').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                openInNewTab();
+            }
+        });
+    </script>
+</body>
+</html>
