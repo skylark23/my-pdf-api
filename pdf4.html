@@ -261,6 +261,7 @@
 
             } catch (error) {
                 console.error('Error fetching PDF:', error);
+                console.log('Error fetching PDF:', error);
                 showStatus('error', `✗ Error: ${error.message}`);
             } finally {
                 // Re-enable button
