@@ -176,7 +176,7 @@
         <div id="status" class="status"></div>
         
         <!-- Hidden link for iOS Safari -->
-        <a id="downloadLink" href="#" target="_blank"></a>
+        <a id="downloadLink1" href="#" target="_blank"></a>
     </div>
 
     <script>
@@ -184,7 +184,8 @@
             const apiUrl = document.getElementById('apiUrl').value.trim();
             const button = document.getElementById('fetchBtn');
             const statusDiv = document.getElementById('status');
-            const downloadLink = document.getElementById('downloadLink');
+            const downloadLink = document.createElement('a');
+            //const downloadLink = document.getElementById('downloadLink');
 
             // Validate URL
             if (!apiUrl) {
