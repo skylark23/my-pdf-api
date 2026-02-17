@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Download - Secure POST</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 { color: #333; margin-bottom: 10px; font-size: 28px; }
+        p  { color: #666; margin-bottom: 30px; line-height: 1.6; }
+
+        button {
+            display: block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 20px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(102,126,234,0.4); }
+        button:disabled { background: #ccc; cursor: not-allowed; transform: none; }
+
+        .status {
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .status.loading { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; display: block; }
+        .status.error   { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; display: block; }
+        .status.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; display: block; }
+
+        .spinner {
+            display: inline-block;
+            width: 14px; height: 14px;
+            border: 2px solid #0c5460;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Hidden anchor - used purely to trigger download */
+        #downloadAnchor { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📥 PDF Download</h1>
+        <p>Fetches PDF securely via POST and prompts user to download</p>
+
+        <button id="btn" onclick="downloadPDF()">Download PDF</button>
+
+        <div id="status" class="status"></div>
+
+        <!-- Hidden anchor used to trigger the download -->
+        <a id="downloadAnchor" download="document.pdf"></a>
+    </div>
+
+    <script>
+        async function downloadPDF() {
+            const btn    = document.getElementById('btn');
+            const status = document.getElementById('status');
+
+            btn.disabled = true;
+            showStatus('loading', '<span class="spinner"></span>Fetching PDF...');
+
+            try {
+                // Your secure POST call - nothing changes here
+                const response = await fetch('https://my-pdf-api-nine.vercel.app/api/pdf', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        // '__pageidheader': '...',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        application: {
+                            account: {
+                                identifier: { adx: '2' }
+                            }
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status} ${response.statusText}`);
+                }
+
+                showStatus('loading', '<span class="spinner"></span>Preparing download...');
+
+                // Get PDF as blob and convert to data URL
+                const blob    = await response.blob();
+                const dataUrl = await blobToDataUrl(blob);
+
+                // Use hidden anchor with `download` attribute to trigger save dialog
+                // The `download` attribute is what tells the browser to download
+                // instead of display - works on desktop and most mobile browsers
+                const anchor      = document.getElementById('downloadAnchor');
+                anchor.href       = dataUrl;
+                anchor.download   = 'document.pdf'; // Triggers download prompt
+                anchor.click();
+
+                showStatus('success', '✓ Download started!');
+                setTimeout(() => status.style.display = 'none', 3000);
+
+            } catch (err) {
+                showStatus('error', `✗ ${err.message}`);
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        function blobToDataUrl(blob) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result);
+                reader.onerror  = reject;
+                reader.readAsDataURL(blob);
+            });
+        }
+
+        function showStatus(type, message) {
+            const el = document.getElementById('status');
+            el.className = `status ${type}`;
+            el.innerHTML  = message;
+        }
+    </script>
+</body>
+</html>
