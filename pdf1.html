@@ -220,12 +220,13 @@
                 // Detect if we're on iOS/Safari
                 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
                 const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-
+                console.log('isIOS: ' + isIOS);
                 if (isIOS || isSafari) {
                     // For iOS/Safari: Use a download link approach
                     downloadLink.href = blobUrl;
                     downloadLink.download = 'document.pdf';
                     downloadLink.target = '_blank';
+                    console.log('inside anchor click');
                     downloadLink.click();
                 } else {
                     // For other browsers: Use window.open
