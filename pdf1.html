@@ -193,7 +193,7 @@
     </style>
 </head>
 <body>
-    <button class="print-button" onclick="window.print()">
+    <button class="print-button" onclick="printPage()">
         🖨️ Print
     </button>
     
@@ -315,6 +315,16 @@
                 fetchAndOpenPDF();
             }
         });
+
+        function printPage() {
+    // Try native iOS print first
+    if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.printPage) {
+        window.webkit.messageHandlers.printPage.postMessage({});
+    } else {
+        // Fallback for regular browsers
+        window.print();
+    }
+}
     </script>
 </body>
 </html>
