@@ -151,9 +151,52 @@
         #downloadLink {
             display: none;
         }
+
+        /* Print button styles */
+        .print-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+        }
+
+        .print-button:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+        }
+
+        .print-button:active {
+            transform: translateY(0);
+        }
+
+        /* Hide print button when printing */
+        @media print {
+            .print-button {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body>
+    <button class="print-button" onclick="window.print()">
+        🖨️ Print
+    </button>
+    
     <div class="container">
         <h1>📄 PDF API Tester</h1>
         <p>Enter your API endpoint and click the button to fetch and open the PDF</p>
